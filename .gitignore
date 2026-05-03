@@ -1,0 +1,10 @@
+__pycache__/
+.venv/
+venv/
+*.pyc
+.DS_Store
+
+# Optional local secrets / tooling
+.env
+.idea/
+.vscode/

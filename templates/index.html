@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trading Behavior Analyzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-base: #0c0f14;
+      --bg-elevated: #12171f;
+      --surface: #161d27;
+      --surface-hover: #1c2531;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(255, 255, 255, 0.12);
+      --text: #f0f3f8;
+      --text-secondary: #9aa8bc;
+      --muted: #6b7c93;
+      --accent: #4f9fff;
+      --accent-hover: #6eb0ff;
+      --accent-muted: rgba(79, 159, 255, 0.15);
+      --warning: #e8a838;
+      --warning-bg: rgba(232, 168, 56, 0.12);
+      --warning-border: rgba(232, 168, 56, 0.35);
+      --info: #5b9cf7;
+      --info-bg: rgba(91, 156, 247, 0.1);
+      --info-border: rgba(91, 156, 247, 0.28);
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+      --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+      --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.55);
+      --radius: 14px;
+      --radius-sm: 10px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--bg-base);
+      background-image:
+        radial-gradient(ellipse 120% 80% at 50% -30%, rgba(79, 159, 255, 0.08), transparent 55%),
+        radial-gradient(ellipse 80% 50% at 100% 50%, rgba(79, 159, 255, 0.04), transparent 45%);
+    }
+
+    .shell {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+
+    /* Header */
+    .hero {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      padding: 0 0.5rem;
+    }
+
+    .hero-title {
+      margin: 0;
+      font-size: clamp(1.75rem, 4vw, 2.25rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      line-height: 1.15;
+    }
+
+    .hero-sub {
+      margin: 0.65rem auto 0;
+      max-width: 34rem;
+      font-size: 0.95rem;
+      font-weight: 400;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .hero-currency {
+      margin: 0.85rem auto 0;
+      display: inline-block;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      color: var(--text-secondary);
+    }
+
+    .hero-currency strong {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .ccy {
+      font-size: 0.58em;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      white-space: nowrap;
+      margin-left: 0.2em;
+      vertical-align: 0.08em;
+    }
+
+    .large-fill-notional .ccy,
+    .large-fill-fee .ccy {
+      font-size: 0.85em;
+      vertical-align: 0;
+    }
+
+    /* Cards */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem 1.65rem;
+      margin-bottom: 1.25rem;
+      box-shadow: var(--shadow-md);
+    }
+
+    .panel-head {
+      margin: 0 0 1.25rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* Upload */
+    .upload-panel .panel-head {
+      margin-bottom: 1rem;
+    }
+
+    .upload-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: stretch;
+      gap: 0.85rem;
+    }
+
+    .file-field {
+      flex: 1;
+      min-width: 200px;
+      position: relative;
+    }
+
+    .file-field input[type="file"] {
+      position: absolute;
+      width: 0.1px;
+      height: 0.1px;
+      opacity: 0;
+      overflow: hidden;
+      z-index: -1;
+    }
+
+    .file-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0.65rem 1rem;
+      border: 1px dashed var(--border-strong);
+      border-radius: var(--radius-sm);
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s, color 0.2s;
+    }
+
+    .file-field input:focus-visible + .file-label {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .file-label:hover {
+      border-color: rgba(79, 159, 255, 0.35);
+      background: var(--surface-hover);
+      color: var(--text);
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 1.75rem;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(165deg, var(--accent) 0%, #3d8ae8 100%);
+      color: #071018;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: var(--shadow-sm), 0 4px 14px rgba(79, 159, 255, 0.25);
+      transition: transform 0.15s ease, box-shadow 0.2s, filter 0.2s;
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.06);
+      box-shadow: var(--shadow-sm), 0 6px 20px rgba(79, 159, 255, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .upload-footnote {
+      margin: 1rem 0 0;
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .alert-error {
+      margin-bottom: 1rem;
+      padding: 0.85rem 1rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(248, 113, 113, 0.35);
+      background: rgba(248, 113, 113, 0.08);
+      color: #fca5a5;
+      font-size: 0.875rem;
+    }
+
+    /* Metric grid */
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+      gap: 1rem;
+    }
+
+    .metric-card {
+      padding: 1.15rem 1.2rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      box-shadow: var(--shadow-sm);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .metric-card:hover {
+      border-color: var(--border-strong);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    }
+
+    .metric-card-title {
+      margin: 0;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .metric-card-value {
+      margin: 0.45rem 0 0;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      line-height: 1.2;
+      word-break: break-word;
+    }
+
+    .metric-card-desc {
+      margin: 0.5rem 0 0;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .summary-footnote {
+      margin: 1.25rem 0 0;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* Overview */
+    .overview-box {
+      padding: 1.35rem 1.5rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--info-border);
+      background: var(--info-bg);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .overview-box p {
+      margin: 0 0 0.85rem;
+      font-size: 1.02rem;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    .overview-box p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Insights */
+    .insights-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .insight-item {
+      display: flex;
+      gap: 0.85rem;
+      align-items: flex-start;
+      padding: 1rem 1.1rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      color: var(--text);
+    }
+
+    .insight-item:nth-child(odd) {
+      background: var(--warning-bg);
+      border-color: var(--warning-border);
+    }
+
+    .insight-item:nth-child(even) {
+      background: var(--info-bg);
+      border-color: var(--info-border);
+    }
+
+    .insight-icon {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      margin-top: 2px;
+    }
+
+    .insight-item:nth-child(odd) .insight-icon {
+      color: var(--warning);
+    }
+
+    .insight-item:nth-child(even) .insight-icon {
+      color: var(--info);
+    }
+
+    .empty-insights {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    /* Fill breakdown */
+    .breakdown-intro {
+      margin: 0 0 1.25rem;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .breakdown-span {
+      margin: 0 0 1.25rem;
+      padding: 0.65rem 0.85rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--info-border);
+      background: rgba(91, 156, 247, 0.06);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .breakdown-span strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .breakdown-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 720px) {
+      .breakdown-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .breakdown-sub {
+      margin: 0 0 0.65rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .breakdown-sub-spaced {
+      margin-top: 0.25rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .mini-table-wrap {
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      overflow: hidden;
+    }
+
+    .mini-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .mini-table th {
+      padding: 0.55rem 0.75rem;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: #1a222d;
+      border-bottom: 1px solid var(--border-strong);
+    }
+
+    .mini-table th:nth-child(n + 2),
+    .mini-table td:nth-child(n + 2) {
+      text-align: right;
+    }
+
+    .mini-table td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .mini-table tbody tr:nth-child(even) {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .mini-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .mini-table .sym-cell {
+      max-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-align: left;
+      font-weight: 500;
+    }
+
+    .empty-breakdown {
+      margin: 0;
+      font-size: 0.875rem;
+      color: var(--muted);
+    }
+
+    .side-track {
+      display: flex;
+      height: 12px;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .side-seg {
+      flex-shrink: 0;
+      height: 100%;
+    }
+
+    .side-seg.buy {
+      background: linear-gradient(90deg, #34d399, #2fb87a);
+    }
+
+    .side-seg.sell {
+      background: linear-gradient(90deg, #fb7185, #e85d70);
+    }
+
+    .side-seg.other {
+      background: #4b5568;
+    }
+
+    .side-legend {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .side-legend li {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.2rem 0;
+    }
+
+    .side-legend .dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 0.4rem;
+      vertical-align: middle;
+    }
+
+    .side-legend .dot.buy { background: #34d399; }
+    .side-legend .dot.sell { background: #fb7185; }
+    .side-legend .dot.other { background: #6b7c93; }
+
+    .large-fills {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .large-fill-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) auto auto auto auto;
+      gap: 0.65rem 1rem;
+      align-items: baseline;
+      padding: 0.75rem 0.9rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      font-size: 0.8125rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    @media (max-width: 640px) {
+      .large-fill-row {
+        grid-template-columns: 1fr;
+        gap: 0.35rem;
+      }
+      .large-fill-side,
+      .large-fill-notional,
+      .large-fill-fee,
+      .large-fill-when {
+        justify-self: start;
+      }
+    }
+
+    .large-fill-sym {
+      font-weight: 600;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .large-fill-side {
+      justify-self: end;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+
+    .large-fill-notional {
+      justify-self: end;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .large-fill-fee {
+      justify-self: end;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .large-fill-when {
+      justify-self: end;
+      color: var(--text-secondary);
+      font-size: 0.78rem;
+    }
+
+    @media (max-width: 540px) {
+      .shell {
+        padding: 1.5rem 1rem 3rem;
+      }
+      .upload-row {
+        flex-direction: column;
+      }
+      .btn-primary {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="hero">
+      <h1 class="hero-title">Trading Behavior Analyzer</h1>
+      <p class="hero-sub">Upload your trading history to understand patterns and improve performance</p>
+      <p class="hero-currency">Fees, notionals, and trade sizes are shown in <strong>{{ currency }}</strong></p>
+    </header>
+
+    <section class="panel upload-panel">
+      <h2 class="panel-head">Upload</h2>
+      {% if error %}
+      <div class="alert-error" role="alert">{{ error }}</div>
+      {% endif %}
+      <form class="upload-row" method="post" enctype="multipart/form-data" action="{{ url_for('index') }}">
+        <div class="file-field">
+          <input type="file" id="csv-file" name="file" accept=".csv,text/csv" required />
+          <label class="file-label" for="csv-file">Choose CSV file…</label>
+        </div>
+        <button type="submit" class="btn-primary">Analyze</button>
+      </form>
+      <p class="upload-footnote">Processed in memory only — nothing is stored.</p>
+    </section>
+
+    {% if ok %}
+    <section class="panel">
+      <h2 class="panel-head">Summary</h2>
+      <div class="metric-grid">
+        <article class="metric-card">
+          <h3 class="metric-card-title">Total trades</h3>
+          <p class="metric-card-value">{{ "{:,}".format(metrics.total_trades) }}</p>
+          <p class="metric-card-desc">Number of fills in this export</p>
+        </article>
+        <article class="metric-card">
+          <h3 class="metric-card-title">Total fees</h3>
+          <p class="metric-card-value">{{ "{:,.2f}".format(metrics.total_fees) }}<span class="ccy">{{ currency }}</span></p>
+          <p class="metric-card-desc">Sum of fees across all fills ({{ currency }})</p>
+        </article>
+        <article class="metric-card">
+          <h3 class="metric-card-title">Most traded symbol</h3>
+          <p class="metric-card-value" style="font-size:1.2rem;">{% if metrics.most_traded_symbol %}{{ metrics.most_traded_symbol }}{% else %}—{% endif %}</p>
+          <p class="metric-card-desc">Highest fill count by instrument</p>
+        </article>
+        <article class="metric-card">
+          <h3 class="metric-card-title">Avg trade size</h3>
+          <p class="metric-card-value">{{ "{:,.2f}".format(metrics.avg_trade_size) }}<span class="ccy">{{ currency }}</span></p>
+          <p class="metric-card-desc">Mean notional per fill ({{ currency }})</p>
+        </article>
+        <article class="metric-card">
+          <h3 class="metric-card-title">Median trade size</h3>
+          <p class="metric-card-value">{{ "{:,.2f}".format(metrics.median_trade_size) }}<span class="ccy">{{ currency }}</span></p>
+          <p class="metric-card-desc">Typical fill size in {{ currency }} (robust to outliers)</p>
+        </article>
+        <article class="metric-card">
+          <h3 class="metric-card-title">Fee load</h3>
+          <p class="metric-card-value">{{ metrics.fee_rate_display }}</p>
+          <p class="metric-card-desc">Fees paid ÷ total notional · shows fee drag vs volume</p>
+        </article>
+        <article class="metric-card">
+          <h3 class="metric-card-title">Top symbol weight</h3>
+          <p class="metric-card-value">{{ "{:.1f}".format(metrics.top_symbol_share_pct) }}%</p>
+          <p class="metric-card-desc">Share of fills on your most-traded instrument</p>
+        </article>
+        <article class="metric-card">
+          <h3 class="metric-card-title">Instruments</h3>
+          <p class="metric-card-value">{{ "{:,}".format(metrics.unique_symbols) }}</p>
+          <p class="metric-card-desc">Distinct symbols with at least one fill</p>
+        </article>
+      </div>
+      <p class="summary-footnote">Trade size is |price × quantity| per fill, in {{ currency }}. Extreme spot or option mixes can pull the mean above the median.</p>
+    </section>
+
+    <section class="panel breakdown-panel">
+      <h2 class="panel-head">Fill breakdown</h2>
+      <p class="breakdown-intro">Symbol concentration, buy vs sell mix, and your largest fills by notional. All dollar amounts below are {{ currency }}.</p>
+      {% if breakdown.has_span %}
+      <p class="breakdown-span">Timestamps in this file span <strong>{{ breakdown.span_start }}</strong> → <strong>{{ breakdown.span_end }}</strong></p>
+      {% endif %}
+      <div class="breakdown-grid">
+        <div>
+          <h3 class="breakdown-sub">By symbol</h3>
+          {% if breakdown.symbol_rows %}
+          <div class="mini-table-wrap">
+            <table class="mini-table">
+              <thead>
+                <tr>
+                  <th>Symbol</th>
+                  <th>Fills</th>
+                  <th>Share</th>
+                  <th>Fees ({{ currency }})</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in breakdown.symbol_rows %}
+                <tr>
+                  <td class="sym-cell" title="{{ row.symbol }}">{{ row.symbol }}</td>
+                  <td>{{ "{:,}".format(row.fills) }}</td>
+                  <td>{{ "{:.1f}".format(row.pct) }}%</td>
+                  <td>{{ "{:,.2f}".format(row.fees) }}<span class="ccy">{{ currency }}</span></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <p class="empty-breakdown">Could not group fills by symbol.</p>
+          {% endif %}
+        </div>
+        {% if breakdown.has_side %}
+        <div>
+          <h3 class="breakdown-sub">Buy vs sell</h3>
+          <div class="side-track" role="img" aria-label="Share of fills by side">
+            <span class="side-seg buy" style="flex: 0 0 {{ breakdown.side_pct.buy }}%;"></span>
+            <span class="side-seg sell" style="flex: 0 0 {{ breakdown.side_pct.sell }}%;"></span>
+            <span class="side-seg other" style="flex: 0 0 {{ breakdown.side_pct.other }}%;"></span>
+          </div>
+          <ul class="side-legend">
+            <li><span><span class="dot buy" aria-hidden="true"></span>Buy</span><span>{{ breakdown.side_counts.buy }} · {{ "{:.1f}".format(breakdown.side_pct.buy) }}%</span></li>
+            <li><span><span class="dot sell" aria-hidden="true"></span>Sell</span><span>{{ breakdown.side_counts.sell }} · {{ "{:.1f}".format(breakdown.side_pct.sell) }}%</span></li>
+            {% if breakdown.side_counts.other %}
+            <li><span><span class="dot other" aria-hidden="true"></span>Other</span><span>{{ breakdown.side_counts.other }} · {{ "{:.1f}".format(breakdown.side_pct.other) }}%</span></li>
+            {% endif %}
+          </ul>
+        </div>
+        {% endif %}
+      </div>
+      <h3 class="breakdown-sub breakdown-sub-spaced">Largest fills by notional ({{ currency }})</h3>
+      <p class="upload-footnote" style="margin-top:0;margin-bottom:0.75rem;">Top {{ breakdown.largest_fills | length }} fills by |price × quantity| in {{ currency }}. Compare to median trade size in Summary.</p>
+      <div class="large-fills">
+        {% for row in breakdown.largest_fills %}
+        <div class="large-fill-row">
+          <span class="large-fill-sym" title="{{ row.symbol }}">{{ row.symbol }}</span>
+          <span class="large-fill-side">{{ row.side }}</span>
+          <span class="large-fill-notional">{{ row.notional }}<span class="ccy">{{ currency }}</span></span>
+          <span class="large-fill-fee">Fee {{ row.fee }}<span class="ccy">{{ currency }}</span></span>
+          <span class="large-fill-when">{{ row.when }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    {% if summary_lines %}
+    <section class="panel">
+      <h2 class="panel-head">Overview</h2>
+      <div class="overview-box">
+        {% for line in summary_lines %}
+        <p>{{ line }}</p>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <section class="panel">
+      <h2 class="panel-head">Insights</h2>
+      {% if insights %}
+      <div class="insights-list">
+        {% for line in insights %}
+        <div class="insight-item">
+          {% if loop.index0 % 2 == 0 %}
+          <svg class="insight-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          {% else %}
+          <svg class="insight-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01" stroke-linecap="round"/>
+          </svg>
+          {% endif %}
+          <span>{{ line }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="empty-insights">No automated insights matched this dataset.</p>
+      {% endif %}
+    </section>
+
+    {% endif %}
+  </div>
+
+  <script>
+    (function () {
+      var input = document.getElementById("csv-file");
+      var label = document.querySelector(".file-label");
+      if (!input || !label) return;
+      input.addEventListener("change", function () {
+        var f = input.files && input.files[0];
+        label.textContent = f ? f.name : "Choose CSV file…";
+      });
+    })();
+  </script>
+</body>
+</html>
