@@ -96,4 +96,6 @@ Uploads are processed **in memory** for the request; nothing is persisted by def
 
 ## 📄 License
 
-Specify your license here (e.g. MIT) when you publish.
+[MIT](LICENSE) — see [`LICENSE`](LICENSE).
+
+**Repository:** [github.com/Madanraj-Delta/trading-behavior-analyzer](https://github.com/Madanraj-Delta/trading-behavior-analyzer)
